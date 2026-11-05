@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consulenza MiFID II</title>
+<link rel="stylesheet" href="/static/stile.css">
+</head>
+<body>
+<header>
+  <div class="marchio">Consulenza MiFID II <span>demo</span></div>
+  <nav id="nav" hidden>
+    <button data-vista="clienti" class="attivo">Clienti</button>
+    <button data-vista="audit" data-ruoli="compliance admin">Registro di audit</button>
+    <button data-vista="mercato">Dati di mercato</button>
+    <a href="/docs" target="_blank">API</a>
+  </nav>
+  <div id="utente"></div>
+</header>
+
+<main>
+  <!-- accesso -->
+  <section id="v-login" class="vista">
+    <div class="scheda accesso">
+      <h1>Accedi</h1>
+      <p class="tenue">Piattaforma dimostrativa: profilazione MiFID II, proposta ottimizzata, verifica di adeguatezza
+        e registro di audit. Prodotti e rendimenti sono simulati.</p>
+      <div class="ruoli">
+        <button data-email="consulente@demo.it">Consulente</button>
+        <button data-email="compliance@demo.it">Compliance</button>
+        <button data-email="admin@demo.it">Amministratore</button>
+      </div>
+      <p class="tenue piccolo">Password demo: <code>demo</code>. Le stesse credenziali valgono su <a href="/docs">/docs</a>.</p>
+      <p id="errore-login" class="errore"></p>
+    </div>
+  </section>
+
+  <!-- clienti -->
+  <section id="v-clienti" class="vista" hidden>
+    <div class="colonne">
+      <aside class="scheda">
+        <div class="titolo-riga"><h2>Clienti</h2><button id="b-nuovo" class="secondario" data-ruoli="consulente admin">+ Nuovo</button></div>
+        <ul id="elenco" class="elenco"></ul>
+      </aside>
+      <div id="dettaglio"><div class="scheda vuoto">Seleziona un cliente.</div></div>
+    </div>
+  </section>
+
+  <!-- audit -->
+  <section id="v-audit" class="vista" hidden>
+    <div class="scheda">
+      <div class="titolo-riga"><h2>Registro di audit</h2><button id="b-verifica">Verifica integrità della catena</button></div>
+      <p id="esito-catena"></p>
+      <table class="tabella"><thead><tr><th>#</th><th>Momento</th><th>Utente</th><th>Azione</th><th>Oggetto</th><th>Impronta</th></tr></thead>
+        <tbody id="eventi"></tbody></table>
+    </div>
+  </section>
+
+  <!-- mercato -->
+  <section id="v-mercato" class="vista" hidden>
+    <div class="scheda">
+      <div class="titolo-riga"><h2>Dati di mercato</h2><button id="b-aggiorna" data-ruoli="admin">Aggiorna ora</button></div>
+      <p class="tenue">€STR e tasso sui depositi dalla BCE, inflazione armonizzata (HICP) da Eurostat. Aggiornati ogni
+        notte da una GitHub Action; l'€STR è il tasso privo di rischio dei rendimenti attesi.</p>
+      <div id="serie" class="griglia-serie"></div>
+    </div>
+  </section>
+</main>
+
+<!-- nuovo cliente e questionario -->
+<dialog id="d-questionario">
+  <form id="f-questionario" method="dialog">
+    <h2 id="titolo-questionario">Nuovo cliente</h2>
+    <fieldset id="anagrafica"><legend>Anagrafica</legend>
+      <label>Nome <input name="nome" required></label>
+      <label>Cognome <input name="cognome" required></label>
+      <label>Data di nascita <input name="data_nascita" type="date" required></label>
+      <label>Email <input name="email" type="email"></label>
+    </fieldset>
+    <fieldset><legend>Conoscenza ed esperienza</legend>
+      <label>Titolo di studio <select name="titolo_studio"><option value="obbligo">Scuola dell'obbligo</option><option value="diploma">Diploma</option><option value="laurea" selected>Laurea</option><option value="laurea_economica">Laurea in economia o finanza</option></select></label>
+      <label class="spunta"><input type="checkbox" name="professione_finanziaria"> Lavora o ha lavorato nel settore finanziario</label>
+      <table class="strumenti"><thead><tr><th>Strumento</th><th>Lo conosce</th><th>Operazioni negli ultimi 3 anni</th></tr></thead><tbody id="strumenti"></tbody></table>
+      <label>Se i tassi salgono, il prezzo di un'obbligazione a tasso fisso… <select name="risposta_tassi_obbligazioni"><option>sale</option><option selected>scende</option><option>non cambia</option></select></label>
+      <label>Un fondo con 500 azioni, rispetto a una sola azione, è… <select name="risposta_diversificazione"><option>più rischioso</option><option selected>meno rischioso</option><option>uguale</option></select></label>
+      <label>Certificato con barriera al 60%: a scadenza il sottostante perde il 50%. Che cosa succede? <select name="risposta_barriera"><option selected>rimborso pieno</option><option>perdo circa il 50%</option><option>perdo tutto</option></select></label>
+    </fieldset>
+    <fieldset><legend>Situazione finanziaria</legend>
+      <label>Reddito annuo netto (€) <input name="reddito_annuo_netto" type="number" value="40000" min="0"></label>
+      <label>Spese annue (€) <input name="spese_annue" type="number" value="25000" min="0"></label>
+      <label>Patrimonio finanziario (€) <input name="patrimonio_finanziario" type="number" value="100000" min="0"></label>
+      <label>Patrimonio immobiliare (€) <input name="patrimonio_immobiliare" type="number" value="0" min="0"></label>
+      <label>Debiti residui (€) <input name="debiti" type="number" value="0" min="0"></label>
+      <label>Persone a carico <input name="persone_a_carico" type="number" value="0" min="0" max="15"></label>
+      <label class="spunta"><input type="checkbox" name="reddito_stabile" checked> Reddito stabile</label>
+    </fieldset>
+    <fieldset><legend>Obiettivi e rischio</legend>
+      <label>Obiettivo <select name="obiettivo"><option value="protezione">Protezione del capitale</option><option value="reddito">Reddito</option><option value="crescita_moderata" selected>Crescita moderata</option><option value="crescita">Crescita</option></select></label>
+      <label>Orizzonte (anni) <input name="orizzonte_anni" type="number" value="8" min="1" max="40"></label>
+      <label>Quota che potrebbe servire entro 12 mesi (%) <input name="quota_liquida_12_mesi" type="number" value="0" min="0" max="100"></label>
+      <label>Se il portafoglio perde il 20% in pochi mesi… <select name="reazione_ribasso_20"><option value="vendo_tutto">vendo tutto</option><option value="vendo_parte">vendo una parte</option><option value="mantengo" selected>mantengo</option><option value="compro">compro ancora</option></select></label>
+      <label>Perdita annua oltre la quale disinveste (%) <input name="perdita_massima_annua" type="number" value="15" min="0" max="60"></label>
+      <label>Scenario preferito <select name="scenario_preferito"><option value="1">+2% / 0%</option><option value="2" selected>+6% / −5%</option><option value="3">+12% / −15%</option><option value="4">+25% / −30%</option></select></label>
+    </fieldset>
+    <fieldset><legend>Sostenibilità</legend>
+      <label class="spunta"><input type="checkbox" name="ha_preferenze"> Ha preferenze di sostenibilità</label>
+      <label>Quota minima sostenibile (%) <input name="quota_minima_sostenibile" type="number" value="0" min="0" max="100"></label>
+      <label>Quota minima allineata alla tassonomia (%) <input name="quota_minima_tassonomia" type="number" value="0" min="0" max="100"></label>
+      <label class="spunta"><input type="checkbox" name="considera_pai"> Considera i principali effetti negativi (PAI)</label>
+    </fieldset>
+    <p id="errore-questionario" class="errore"></p>
+    <div class="azioni"><button value="annulla" formnovalidate class="secondario">Annulla</button><button id="b-salva" value="salva">Calcola il profilo</button></div>
+  </form>
+</dialog>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

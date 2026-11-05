@@ -1,0 +1,23 @@
+# Deploy su Render (piano gratuito): New → Blueprint → seleziona questo repository.
+# Crea il database PostgreSQL e il servizio web dall'immagine Docker; la chiave dei token è generata da Render.
+databases:
+  - name: mifid-db
+    plan: free
+    databaseName: mifid
+    user: mifid
+
+services:
+  - type: web
+    name: mifid-advisory
+    runtime: docker
+    plan: free
+    healthCheckPath: /salute
+    envVars:
+      - key: MIFID_DATABASE_URL
+        fromDatabase:
+          name: mifid-db
+          property: connectionString
+      - key: MIFID_CHIAVE_SEGRETA
+        generateValue: true
+      - key: MIFID_DEMO
+        value: "true"

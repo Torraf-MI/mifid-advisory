@@ -1,0 +1,59 @@
+{
+  "eta": 58,
+  "conoscenza": {
+    "titolo_studio": "laurea_economica",
+    "professione_finanziaria": false,
+    "strumenti": [
+      {
+        "classe": "liquidita",
+        "conosce": true,
+        "operazioni_3_anni": "frequente"
+      },
+      {
+        "classe": "obbligazioni",
+        "conosce": true,
+        "operazioni_3_anni": "occasionale"
+      },
+      {
+        "classe": "fondi_etf",
+        "conosce": true,
+        "operazioni_3_anni": "occasionale"
+      },
+      {
+        "classe": "azioni",
+        "conosce": true,
+        "operazioni_3_anni": "frequente"
+      },
+      {
+        "classe": "certificati",
+        "conosce": true,
+        "operazioni_3_anni": "occasionale"
+      }
+    ],
+    "risposta_tassi_obbligazioni": "scende",
+    "risposta_diversificazione": "meno rischioso",
+    "risposta_barriera": "perdo circa il 50%"
+  },
+  "finanze": {
+    "reddito_annuo_netto": 95000,
+    "spese_annue": 55000,
+    "patrimonio_finanziario": 450000,
+    "patrimonio_immobiliare": 600000,
+    "debiti": 80000,
+    "reddito_stabile": true,
+    "persone_a_carico": 1
+  },
+  "obiettivi": {
+    "obiettivo": "crescita_moderata",
+    "orizzonte_anni": 8,
+    "quota_liquida_12_mesi": 0.05
+  },
+  "rischio": {
+    "reazione_ribasso_20": "mantengo",
+    "perdita_massima_annua": 0.2,
+    "scenario_preferito": 3
+  },
+  "sostenibilita": {
+    "ha_preferenze": false
+  }
+}

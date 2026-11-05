@@ -1,0 +1,41 @@
+# Ambiente completo in locale: API + PostgreSQL 16.  docker compose up --build  →  http://localhost:8000
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mifid
+      POSTGRES_PASSWORD: mifid
+      POSTGRES_DB: mifid
+    volumes:
+      - dati_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mifid -d mifid"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MIFID_DATABASE_URL: postgresql://mifid:mifid@db:5432/mifid
+      MIFID_DEMO: "true"
+      MIFID_CHIAVE_SEGRETA: ${MIFID_CHIAVE_SEGRETA:-solo-per-sviluppo-e-demo-cambiare-in-produzione}
+    ports:
+      - "8000:8000"
+
+  # Pipeline dei dati di mercato su richiesta:  docker compose run --rm mercato
+  mercato:
+    build: .
+    profiles: ["pipeline"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MIFID_DATABASE_URL: postgresql://mifid:mifid@db:5432/mifid
+    command: ["mifid-advisory", "aggiorna-mercato"]
+
+volumes:
+  dati_db:

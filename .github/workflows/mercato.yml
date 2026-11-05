@@ -1,0 +1,43 @@
+name: Dati di mercato
+
+# Ogni notte: scarica €STR e tasso sui depositi (BCE) e inflazione HICP (Eurostat) e li salva nel database
+# di produzione (secret MIFID_DATABASE_URL). Senza il secret aggiorna un database SQLite temporaneo e ne
+# pubblica il contenuto come artefatto, così la pipeline resta verificabile anche sui fork.
+on:
+  schedule:
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    env:
+      HA_DB: ${{ secrets.MIFID_DATABASE_URL != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install .
+      - name: Aggiornamento
+        env:
+          MIFID_DATABASE_URL: ${{ secrets.MIFID_DATABASE_URL || 'sqlite:///mercato.db' }}
+        run: mifid-advisory aggiorna-mercato --senza-esempio --rigoroso | tee esito.json
+      - name: Esportazione delle serie
+        if: env.HA_DB != 'true'
+        run: |
+          python - <<'PY'
+          import sqlite3, json
+          righe = sqlite3.connect("mercato.db").execute("select serie, data, valore from dati_mercato order by serie, data").fetchall()
+          json.dump([dict(zip(("serie", "data", "valore"), r)) for r in righe], open("serie.json", "w"), indent=1)
+          print(len(righe), "osservazioni")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dati-mercato
+          path: |
+            esito.json
+            serie.json
+          if-no-files-found: ignore

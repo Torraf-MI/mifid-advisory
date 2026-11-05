@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dichiarazione di adeguatezza n. {{ proposta.id }}</title>
+<style>
+  :root { --testo:#1d2433; --tenue:#5b6578; --linea:#dde2ea; --sfondo:#f6f7f9; --blu:#1f4e8c;
+          --ok:#1b7f4b; --att:#a86a00; --ko:#b3261e; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--sfondo); color:var(--testo); font:14px/1.5 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 860px; margin: 24px auto; background:#fff; padding: 40px 48px; border:1px solid var(--linea); }
+  h1 { font-size: 22px; margin: 0 0 4px; color: var(--blu); }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--blu);
+       border-bottom: 2px solid var(--blu); padding-bottom: 4px; margin: 28px 0 12px; }
+  .sotto { color: var(--tenue); margin: 0; }
+  .griglia { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 10px 24px; }
+  .griglia div span { display:block; color: var(--tenue); font-size: 12px; }
+  table { width:100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align:left; padding: 6px 8px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  th { color: var(--tenue); font-weight: 600; font-size: 12px; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .esito { display:inline-block; padding: 4px 12px; border-radius: 4px; font-weight: 600; color:#fff; }
+  .adeguato { background: var(--ok); } .adeguato_con_avvertenze { background: var(--att); } .non_adeguato { background: var(--ko); }
+  .stato { font-weight: 600; font-size: 12px; text-transform: uppercase; }
+  .stato.ok { color: var(--ok); } .stato.attenzione { color: var(--att); } .stato.ko { color: var(--ko); }
+  .rif { color: var(--tenue); font-size: 11px; }
+  .nota { background: var(--sfondo); padding: 12px 16px; border-left: 3px solid var(--blu); margin: 12px 0; }
+  .firme { display:grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 40px; }
+  .firme div { border-top: 1px solid var(--testo); padding-top: 6px; color: var(--tenue); font-size: 12px; }
+  code { font-size: 11px; word-break: break-all; }
+  footer { color: var(--tenue); font-size: 11px; margin-top: 32px; }
+  @media print { body { background:#fff; } main { border:0; margin:0; padding: 0; } }
+  @media (max-width: 600px) { main { padding: 20px 16px; } .firme { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Dichiarazione di adeguatezza</h1>
+  <p class="sotto">Proposta n. {{ proposta.id }} del {{ proposta.creato_il.strftime('%d/%m/%Y') }} ·
+     consulenza in materia di investimenti (art. 25(6) Direttiva 2014/65/UE, art. 54(12) Reg. delegato 2017/565)</p>
+
+  <h2>Cliente e consulente</h2>
+  <div class="griglia">
+    <div><span>Cliente</span>{{ cliente.nome }} {{ cliente.cognome }}</div>
+    <div><span>Consulente</span>{{ consulente.nome }}</div>
+    <div><span>Importo da investire</span>{{ proposta.importo|eur }}</div>
+    <div><span>Profilo valido fino al</span>{{ valido_fino.strftime('%d/%m/%Y') }}</div>
+  </div>
+
+  <h2>Il suo profilo</h2>
+  <div class="griglia">
+    <div><span>Classe di rischio</span>{{ profilo.classe }} · {{ profilo.nome }}</div>
+    <div><span>Obiettivo</span>{{ obiettivo|capitalize }}</div>
+    <div><span>Orizzonte</span>{{ profilo.orizzonte_anni }} anni</div>
+    <div><span>Perdita annua sostenibile</span>{{ [profilo.capacita_perdita, profilo.limiti.perdita_max]|min|pct(0) }} (capacità finanziaria {{ profilo.capacita_perdita|pct(0) }}, limite della classe {{ profilo.limiti.perdita_max|pct(0) }})</div>
+  </div>
+  <p>La classe di rischio è la più prudente fra le quattro componenti valutate dal questionario; nel suo caso
+     è determinata da <strong>{{ profilo.vincolo|lower }}</strong>.</p>
+  <table>
+    <tr>{% for nome in profilo.componenti %}<th>{{ nome }}</th>{% endfor %}</tr>
+    <tr>{% for v in profilo.componenti.values() %}<td>classe {{ v }}</td>{% endfor %}</tr>
+  </table>
+  {% if profilo.incoerenze %}
+  <div class="nota"><strong>Risposte da approfondire:</strong>
+    <ul>{% for i in profilo.incoerenze %}<li>{{ i }}</li>{% endfor %}</ul></div>
+  {% endif %}
+
+  <h2>La raccomandazione</h2>
+  <table>
+    <tr><th>Prodotto</th><th>Tipologia</th><th class="n">SRI</th><th class="n">Peso</th><th class="n">Importo</th></tr>
+    {% for x in posizioni %}
+    <tr><td>{{ x.prodotto.nome }}<br><span class="rif">{{ x.prodotto.isin }}</span></td><td>{{ x.classe }}</td>
+        <td class="n">{{ x.prodotto.sri }}/7</td><td class="n">{{ x.p.peso|pct(0) }}</td><td class="n">{{ x.p.importo|eur }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>Rischi, rendimenti e costi attesi</h2>
+  <div class="griglia">
+    <div><span>Rendimento atteso annuo, al netto dei costi</span>{{ m.rendimento_atteso|pct }}</div>
+    <div><span>Volatilità annua</span>{{ m.volatilita|pct }} (massimo del profilo {{ profilo.limiti.volatilita_max|pct(0) }})</div>
+    <div><span>Perdita media nel 5% degli anni peggiori</span>{{ m.es_95|pct }} · {{ (m.es_95 * proposta.importo)|eur }}</div>
+    <div><span>Probabilità di perdita a {{ m.orizzonte_anni }} anni</span>{{ m.probabilita_perdita|pct(0) }}</div>
+    <div><span>Indicatore di rischio del portafoglio</span>{{ m.sri }}/7</div>
+    <div><span>Costi annui</span>{{ m.costo_annuo|pct(2) }} · {{ m.costi_totali|eur }} in {{ m.orizzonte_anni }} anni</div>
+  </div>
+  <table style="margin-top:12px">
+    <tr><th>Capitale dopo {{ m.orizzonte_anni }} anni</th><th class="n">Sfavorevole</th><th class="n">Moderato</th><th class="n">Favorevole</th></tr>
+    <tr><td>Scenari (10°, 50° e 90° percentile)</td><td class="n">{{ m.scenari.sfavorevole|eur }}</td>
+        <td class="n">{{ m.scenari.moderato|eur }}</td><td class="n">{{ m.scenari.favorevole|eur }}</td></tr>
+  </table>
+  {% if profilo.sostenibilita.ha_preferenze %}
+  <p>Preferenze di sostenibilità: quota in investimenti sostenibili {{ m.quota_sostenibile|pct(0) }}
+     (richiesta {{ profilo.sostenibilita.quota_minima_sostenibile|pct(0) }}), allineata alla tassonomia UE
+     {{ m.quota_tassonomia|pct(0) }} (richiesta {{ profilo.sostenibilita.quota_minima_tassonomia|pct(0) }}).</p>
+  {% endif %}
+
+  <h2>Verifica di adeguatezza</h2>
+  <p>Esito: <span class="esito {{ esito_codice }}">{{ esito }}</span></p>
+  <table>
+    <tr><th>Controllo</th><th>Esito</th><th>Motivazione</th></tr>
+    {% for c in controlli %}
+    <tr><td>{{ c.descrizione }}<br><span class="rif">{{ c.area }}{% if c.riferimento %} · {{ c.riferimento }}{% endif %}</span></td>
+        <td><span class="stato {{ c.esito }}">{{ c.esito }}</span></td><td>{{ c.dettaglio }}</td></tr>
+    {% endfor %}
+  </table>
+  {% if proposta.portafoglio_attuale %}
+  <div class="nota">La raccomandazione sostituisce investimenti già detenuti: l'analisi costi-benefici del cambio è
+    riportata fra i controlli, come richiesto dall'art. 54(11) del Regolamento delegato 2017/565.</div>
+  {% endif %}
+
+  <div class="nota">Il documento descrive scenari e stime, non garanzie: il valore dell'investimento può diminuire e
+    il capitale non è garantito. La consulenza non prevede una valutazione periodica dell'adeguatezza; il profilo va
+    aggiornato alla scadenza o prima, se la sua situazione cambia.</div>
+
+  <div class="firme"><div>Firma del cliente</div><div>Firma del consulente</div></div>
+
+  <footer>
+    Stato della proposta: {{ proposta.stato|replace('_', ' ') }}{% if proposta.decisa_il %} il {{ proposta.decisa_il.strftime('%d/%m/%Y') }}{% endif %}.
+    Documento generato il {{ generata_il.strftime('%d/%m/%Y alle %H:%M') }} UTC.
+    {% if evento %}<br>Registro di audit: evento n. {{ evento.id }}, impronta SHA-256 <code>{{ evento.hash }}</code>{% endif %}
+    <br>Prodotti e rendimenti simulati a scopo dimostrativo.
+  </footer>
+</main>
+</body>
+</html>
